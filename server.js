@@ -8,7 +8,12 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// ✅ This stores conversation history (memory)
+// Root route (for browser test)
+app.get("/", (req, res) => {
+  res.send("GenAI Backend is running 🚀");
+});
+
+// Conversation memory
 let conversation = [];
 
 app.post("/ask", async (req, res) => {
@@ -19,7 +24,6 @@ app.post("/ask", async (req, res) => {
   }
 
   try {
-    // ✅ Add user message to memory
     conversation.push({ role: "user", content: question });
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -30,17 +34,15 @@ app.post("/ask", async (req, res) => {
       },
       body: JSON.stringify({
         model: "llama-3.1-8b-instant",
-        messages: conversation,   // send full chat history
+        messages: conversation,
       }),
     });
 
     const data = await response.json();
 
-    console.log("GROQ RESPONSE:", data);
+    const answer =
+      data?.choices?.[0]?.message?.content || "No response from AI";
 
-    const answer = data?.choices?.[0]?.message?.content || "No response from AI";
-
-    // ✅ Save AI reply to memory too
     conversation.push({ role: "assistant", content: answer });
 
     res.json({ answer });
@@ -51,9 +53,8 @@ app.post("/ask", async (req, res) => {
   }
 });
 
-// ✅ Start server
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
